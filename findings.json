@@ -1,13 +1,13 @@
 {
   "summary": {
-    "generated_at": "2026-05-25 18:13",
-    "total_findings": 39,
-    "total_monthly_waste": 5647.17,
-    "total_annual_waste": 67766.04,
+    "generated_at": "2026-05-26 15:20",
+    "total_findings": 41,
+    "total_monthly_waste": 5726.62,
+    "total_annual_waste": 68719.44,
     "waste_by_category": {
       "Idle Resource": 4990.2,
       "Zombie Resource": 551.6,
-      "Storage Optimisation": 105.37
+      "Storage Optimisation": 184.82
     },
     "top10_monthly_waste": 4608.3
   },
@@ -199,7 +199,7 @@
       "recommendation": "Stop or terminate i-09963334018. If needed occasionally, convert to spot or use auto-start/stop scheduler.",
       "cli_fix": "aws ec2 stop-instances --instance-ids i-09963334018 --region us-east-1",
       "waste_score": 60.0,
-      "rank": 17
+      "rank": 18
     },
     {
       "finding_id": "IDLE-EC2-989805",
@@ -216,7 +216,7 @@
       "recommendation": "Stop or terminate i-01438989805. If needed occasionally, convert to spot or use auto-start/stop scheduler.",
       "cli_fix": "aws ec2 stop-instances --instance-ids i-01438989805 --region us-east-1",
       "waste_score": 30.0,
-      "rank": 21
+      "rank": 22
     },
     {
       "finding_id": "IDLE-EC2-792787",
@@ -352,7 +352,7 @@
       "recommendation": "Stop or terminate i-01822873088. If needed occasionally, convert to spot or use auto-start/stop scheduler.",
       "cli_fix": "aws ec2 stop-instances --instance-ids i-01822873088 --region eu-west-1",
       "waste_score": 60.0,
-      "rank": 18
+      "rank": 19
     },
     {
       "finding_id": "IDLE-EC2-514789",
@@ -386,7 +386,7 @@
       "recommendation": "Stop or terminate i-04875962612. If needed occasionally, convert to spot or use auto-start/stop scheduler.",
       "cli_fix": "aws ec2 stop-instances --instance-ids i-04875962612 --region ap-south-1",
       "waste_score": 30.0,
-      "rank": 22
+      "rank": 23
     },
     {
       "finding_id": "IDLE-EC2-237817",
@@ -420,7 +420,7 @@
       "recommendation": "Stop or terminate i-01676168421. If needed occasionally, convert to spot or use auto-start/stop scheduler.",
       "cli_fix": "aws ec2 stop-instances --instance-ids i-01676168421 --region eu-west-1",
       "waste_score": 30.0,
-      "rank": 23
+      "rank": 24
     },
     {
       "finding_id": "IDLE-RDS-LA8541",
@@ -505,7 +505,7 @@
       "recommendation": "Snapshot then delete if data not needed. If needed, attach to an instance.",
       "cli_fix": "aws ec2 create-snapshot --volume-id vol-08067372072 --description 'backup-before-delete' && aws ec2 delete-volume --volume-id vol-08067372072",
       "waste_score": 20.0,
-      "rank": 24
+      "rank": 25
     },
     {
       "finding_id": "EBS-UNATTACHED-416213",
@@ -522,7 +522,7 @@
       "recommendation": "Snapshot then delete if data not needed. If needed, attach to an instance.",
       "cli_fix": "aws ec2 create-snapshot --volume-id vol-01429416213 --description 'backup-before-delete' && aws ec2 delete-volume --volume-id vol-01429416213",
       "waste_score": 20.0,
-      "rank": 25
+      "rank": 26
     },
     {
       "finding_id": "EBS-UNATTACHED-285822",
@@ -539,7 +539,7 @@
       "recommendation": "Snapshot then delete if data not needed. If needed, attach to an instance.",
       "cli_fix": "aws ec2 create-snapshot --volume-id vol-09303285822 --description 'backup-before-delete' && aws ec2 delete-volume --volume-id vol-09303285822",
       "waste_score": 10.0,
-      "rank": 29
+      "rank": 31
     },
     {
       "finding_id": "EBS-UNATTACHED-782991",
@@ -556,7 +556,7 @@
       "recommendation": "Snapshot then delete if data not needed. If needed, attach to an instance.",
       "cli_fix": "aws ec2 create-snapshot --volume-id vol-03271782991 --description 'backup-before-delete' && aws ec2 delete-volume --volume-id vol-03271782991",
       "waste_score": 10.0,
-      "rank": 30
+      "rank": 32
     },
     {
       "finding_id": "EBS-UNATTACHED-872495",
@@ -607,7 +607,7 @@
       "recommendation": "Snapshot then delete if data not needed. If needed, attach to an instance.",
       "cli_fix": "aws ec2 create-snapshot --volume-id vol-07393195616 --description 'backup-before-delete' && aws ec2 delete-volume --volume-id vol-07393195616",
       "waste_score": 20.0,
-      "rank": 26
+      "rank": 27
     },
     {
       "finding_id": "EBS-UNATTACHED-195918",
@@ -624,7 +624,7 @@
       "recommendation": "Snapshot then delete if data not needed. If needed, attach to an instance.",
       "cli_fix": "aws ec2 create-snapshot --volume-id vol-05310195918 --description 'backup-before-delete' && aws ec2 delete-volume --volume-id vol-05310195918",
       "waste_score": 5.0,
-      "rank": 32
+      "rank": 34
     },
     {
       "finding_id": "EBS-UNATTACHED-785916",
@@ -641,7 +641,7 @@
       "recommendation": "Snapshot then delete if data not needed. If needed, attach to an instance.",
       "cli_fix": "aws ec2 create-snapshot --volume-id vol-08325785916 --description 'backup-before-delete' && aws ec2 delete-volume --volume-id vol-08325785916",
       "waste_score": 20.0,
-      "rank": 27
+      "rank": 28
     },
     {
       "finding_id": "EBS-UNATTACHED-292475",
@@ -658,7 +658,7 @@
       "recommendation": "Snapshot then delete if data not needed. If needed, attach to an instance.",
       "cli_fix": "aws ec2 create-snapshot --volume-id vol-03343292475 --description 'backup-before-delete' && aws ec2 delete-volume --volume-id vol-03343292475",
       "waste_score": 5.0,
-      "rank": 33
+      "rank": 35
     },
     {
       "finding_id": "EBS-UNATTACHED-374338",
@@ -692,7 +692,7 @@
       "recommendation": "Snapshot then delete if data not needed. If needed, attach to an instance.",
       "cli_fix": "aws ec2 create-snapshot --volume-id vol-03929454134 --description 'backup-before-delete' && aws ec2 delete-volume --volume-id vol-03929454134",
       "waste_score": 20.0,
-      "rank": 28
+      "rank": 29
     },
     {
       "finding_id": "EIP-UNUSED-640499",
@@ -709,7 +709,7 @@
       "recommendation": "Release EIP if no longer needed.",
       "cli_fix": "aws ec2 release-address --allocation-id eipalloc-063640499 --region ap-south-1",
       "waste_score": 2.16,
-      "rank": 34
+      "rank": 36
     },
     {
       "finding_id": "EIP-UNUSED-062156",
@@ -726,7 +726,7 @@
       "recommendation": "Release EIP if no longer needed.",
       "cli_fix": "aws ec2 release-address --allocation-id eipalloc-067062156 --region ap-south-1",
       "waste_score": 2.16,
-      "rank": 35
+      "rank": 37
     },
     {
       "finding_id": "EIP-UNUSED-813739",
@@ -743,7 +743,7 @@
       "recommendation": "Release EIP if no longer needed.",
       "cli_fix": "aws ec2 release-address --allocation-id eipalloc-084813739 --region ap-south-1",
       "waste_score": 2.16,
-      "rank": 36
+      "rank": 38
     },
     {
       "finding_id": "EIP-UNUSED-600766",
@@ -760,7 +760,7 @@
       "recommendation": "Release EIP if no longer needed.",
       "cli_fix": "aws ec2 release-address --allocation-id eipalloc-099600766 --region eu-west-1",
       "waste_score": 2.16,
-      "rank": 37
+      "rank": 39
     },
     {
       "finding_id": "EIP-UNUSED-276174",
@@ -777,7 +777,7 @@
       "recommendation": "Release EIP if no longer needed.",
       "cli_fix": "aws ec2 release-address --allocation-id eipalloc-067276174 --region eu-west-1",
       "waste_score": 2.16,
-      "rank": 38
+      "rank": 40
     },
     {
       "finding_id": "EIP-UNUSED-788100",
@@ -794,7 +794,28 @@
       "recommendation": "Release EIP if no longer needed.",
       "cli_fix": "aws ec2 release-address --allocation-id eipalloc-044788100 --region ap-south-1",
       "waste_score": 2.16,
-      "rank": 39
+      "rank": 41
+    },
+    {
+      "finding_id": "S3-COLD-ucket-03",
+      "category": "Storage Optimisation",
+      "severity": "MEDIUM",
+      "service": "S3",
+      "resource_id": "s3-frontend-dev-bucket-03",
+      "resource_name": "frontend-dev-s3-03",
+      "region": "us-east-1",
+      "team": "frontend",
+      "environment": "dev",
+      "size_gb": 4951.0,
+      "access_tier": "Cold",
+      "days_since_access": 60,
+      "last_accessed": "2026-03-27",
+      "detail": "4,951 GB bucket not accessed in 60 days but on S3 Standard pricing. Tier: Cold.",
+      "monthly_waste_usd": 62.63,
+      "recommendation": "Apply S3 Intelligent-Tiering or Lifecycle rule to move to Glacier after 30 days.",
+      "cli_fix": "aws s3api put-bucket-lifecycle-configuration --bucket s3-frontend-dev-bucket-03 --lifecycle-configuration file://glacier-lifecycle.json",
+      "waste_score": 62.63,
+      "rank": 17
     },
     {
       "finding_id": "S3-COLD-ucket-04",
@@ -806,12 +827,16 @@
       "region": "us-east-1",
       "team": "payments",
       "environment": "sandbox",
-      "detail": "Bucket not accessed in 101 days but on S3 Standard pricing. Move to Glacier.",
+      "size_gb": 3822.0,
+      "access_tier": "Frozen",
+      "days_since_access": 102,
+      "last_accessed": "2026-02-13",
+      "detail": "3,822 GB bucket not accessed in 102 days but on S3 Standard pricing. Tier: Frozen.",
       "monthly_waste_usd": 48.35,
       "recommendation": "Apply S3 Intelligent-Tiering or Lifecycle rule to move to Glacier after 30 days.",
       "cli_fix": "aws s3api put-bucket-lifecycle-configuration --bucket s3-payments-sandbox-bucket-04 --lifecycle-configuration file://glacier-lifecycle.json",
       "waste_score": 48.35,
-      "rank": 20
+      "rank": 21
     },
     {
       "finding_id": "S3-COLD-ucket-07",
@@ -823,12 +848,16 @@
       "region": "us-east-1",
       "team": "payments",
       "environment": "sandbox",
-      "detail": "Bucket not accessed in 78 days but on S3 Standard pricing. Move to Glacier.",
+      "size_gb": 578.0,
+      "access_tier": "Cold",
+      "days_since_access": 79,
+      "last_accessed": "2026-03-08",
+      "detail": "578 GB bucket not accessed in 79 days but on S3 Standard pricing. Tier: Cold.",
       "monthly_waste_usd": 7.31,
       "recommendation": "Apply S3 Intelligent-Tiering or Lifecycle rule to move to Glacier after 30 days.",
       "cli_fix": "aws s3api put-bucket-lifecycle-configuration --bucket s3-payments-sandbox-bucket-07 --lifecycle-configuration file://glacier-lifecycle.json",
       "waste_score": 7.31,
-      "rank": 31
+      "rank": 33
     },
     {
       "finding_id": "S3-COLD-ucket-08",
@@ -840,12 +869,37 @@
       "region": "us-east-1",
       "team": "ml-ops",
       "environment": "staging",
-      "detail": "Bucket not accessed in 91 days but on S3 Standard pricing. Move to Glacier.",
+      "size_gb": 3930.0,
+      "access_tier": "Frozen",
+      "days_since_access": 92,
+      "last_accessed": "2026-02-23",
+      "detail": "3,930 GB bucket not accessed in 92 days but on S3 Standard pricing. Tier: Frozen.",
       "monthly_waste_usd": 49.71,
       "recommendation": "Apply S3 Intelligent-Tiering or Lifecycle rule to move to Glacier after 30 days.",
       "cli_fix": "aws s3api put-bucket-lifecycle-configuration --bucket s3-ml-ops-staging-bucket-08 --lifecycle-configuration file://glacier-lifecycle.json",
       "waste_score": 49.71,
-      "rank": 19
+      "rank": 20
+    },
+    {
+      "finding_id": "S3-IA-ucket-01",
+      "category": "Storage Optimisation",
+      "severity": "LOW",
+      "service": "S3",
+      "resource_id": "s3-frontend-dev-bucket-01",
+      "resource_name": "frontend-dev-s3-01",
+      "region": "us-east-1",
+      "team": "frontend",
+      "environment": "dev",
+      "size_gb": 1625.0,
+      "access_tier": "Infrequent",
+      "days_since_access": 52,
+      "last_accessed": "2026-04-04",
+      "detail": "1,625 GB bucket last accessed 52 days ago. Move to S3-Infrequent Access tier.",
+      "monthly_waste_usd": 16.82,
+      "recommendation": "Switch to S3 Infrequent Access or enable Intelligent-Tiering.",
+      "cli_fix": "aws s3api put-bucket-intelligent-tiering-configuration --bucket s3-frontend-dev-bucket-01 --id tiering-config --intelligent-tiering-configuration Id=tiering-config,Status=Enabled",
+      "waste_score": 10.09,
+      "rank": 30
     }
   ]
 }

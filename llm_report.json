@@ -1,17 +1,17 @@
 {
-  "executive_summary": "This audit identified $67,766 in annual waste across 39 findings, with a single idle RDS instance costing $691/month being the top offender. 88% of waste ($4,990) comes from idle resources running in non-production environments that could be safely stopped today. Immediate action on the top 10 findings alone would save $4,607 monthly with zero business impact.",
-  "total_monthly_waste": 5647.17,
-  "total_annual_waste": 67766.04,
+  "executive_summary": "Your AWS infrastructure is wasting $68,719 annually across 41 resources, with the majority ($59,884) coming from idle EC2 instances and RDS databases running with extremely low utilization. The worst offender is a sandbox RDS instance that's been idle for 68 days, burning $691 monthly with just 2.91% CPU usage. Immediate action on the top 10 findings alone would save $48,516 annually with zero business impact.",
+  "total_monthly_waste": 5726.62,
+  "total_annual_waste": 68719.44,
   "findings": [
     {
       "rank": 1,
       "finding_id": "IDLE-RDS-LA8541",
       "resource_name": "platform-sandbox-rds-03",
       "team": "platform",
-      "plain_english": "This database has been sitting idle for 68 days in a sandbox environment, using only 2.91% CPU but still charging full price. RDS instances can't be stopped for more than 7 days, so it keeps auto-restarting and billing continuously.",
-      "business_impact": "Wasting $8,294 annually on a database that appears to serve no active purpose in sandbox testing.",
+      "plain_english": "This database has been sitting idle for 68 days in your sandbox environment, using only 2.91% of its CPU capacity. Unlike EC2 instances, RDS can't be stopped for more than 7 days, so it's been continuously charging you $691 per month for doing essentially nothing.",
+      "business_impact": "This single unused database is costing $8,294 annually with zero business value.",
       "monthly_saving": 691.2,
-      "priority_action": "Create a final backup snapshot and delete the database if no active development needs it.",
+      "priority_action": "Create a final backup snapshot and delete this database immediately if no active development is using it.",
       "cli_fix": "aws rds create-db-snapshot --db-instance-identifier db-PLA8541 --db-snapshot-identifier db-PLA8541-final-snap"
     },
     {
@@ -19,10 +19,10 @@
       "finding_id": "IDLE-EC2-938612",
       "resource_name": "payments-staging-ec2-16",
       "team": "payments",
-      "plain_english": "This server has been running for 94 days but only using 4.18% of its computing power, well below our 5% efficiency threshold. It's essentially an expensive computer doing almost nothing.",
-      "business_impact": "Burning $6,635 annually on unused computing capacity that could fund actual business initiatives.",
+      "plain_english": "This server has been running for 94 days with only 4.18% CPU usage, well below productive levels. It's essentially a very expensive computer that's turned on but not doing any meaningful work.",
+      "business_impact": "Wasting $6,635 annually on unused staging capacity that could be provisioned on-demand when needed.",
       "monthly_saving": 552.9,
-      "priority_action": "Stop the instance immediately and implement auto-start/stop scheduling for staging workloads.",
+      "priority_action": "Stop this instance immediately and implement auto-scheduling to start it only when staging tests are needed.",
       "cli_fix": "aws ec2 stop-instances --instance-ids i-07517938612 --region ap-south-1"
     },
     {
@@ -30,10 +30,10 @@
       "finding_id": "IDLE-EC2-514789",
       "resource_name": "payments-dev-ec2-21",
       "team": "payments",
-      "plain_english": "This development server has been running for 62 days with only 3.92% CPU usage, indicating no active development work. Development environments should be stopped when not actively coding.",
-      "business_impact": "Wasting $6,635 annually on idle development infrastructure that provides zero business value when unused.",
+      "plain_english": "This development server has been running for 62 days with only 3.92% CPU usage. Development environments typically don't need to run 24/7 since developers work normal business hours.",
+      "business_impact": "Burning $6,635 annually on always-on development infrastructure that likely sits unused nights and weekends.",
       "monthly_saving": 552.9,
-      "priority_action": "Stop the instance and train developers to start/stop resources as needed for active development.",
+      "priority_action": "Stop this instance and train developers to start it only when actively coding.",
       "cli_fix": "aws ec2 stop-instances --instance-ids i-01420514789 --region eu-west-1"
     },
     {
@@ -41,10 +41,10 @@
       "finding_id": "IDLE-EC2-237817",
       "resource_name": "data-eng-sandbox-ec2-23",
       "team": "data-eng",
-      "plain_english": "This sandbox server for data engineering has been idle for 39 days with 4.04% CPU usage. Sandbox environments should only run during active experimentation or testing.",
-      "business_impact": "Throwing away $6,635 annually on unused sandbox capacity that could support actual data engineering experiments.",
+      "plain_english": "This sandbox server for data engineering experiments has been idle for 39 days with 4.04% CPU usage. Sandbox environments should be ephemeral and destroyed when experiments are complete.",
+      "business_impact": "Costing $6,635 annually for experimental infrastructure that should be created and destroyed as needed.",
       "monthly_saving": 552.9,
-      "priority_action": "Immediately stop the instance and implement scheduled start/stop for sandbox workloads.",
+      "priority_action": "Terminate this instance and establish a policy that sandbox resources must be tagged with auto-deletion dates.",
       "cli_fix": "aws ec2 stop-instances --instance-ids i-03090237817 --region ap-south-1"
     },
     {
@@ -52,10 +52,10 @@
       "finding_id": "IDLE-EC2-602734",
       "resource_name": "data-eng-prod-ec2-12",
       "team": "data-eng",
-      "plain_english": "This production server is severely underutilized at 2.18% CPU over 40 days, suggesting the workload doesn't match the server size. Production resources running this idle indicate poor capacity planning.",
-      "business_impact": "Wasting $5,875 annually on oversized production infrastructure that could be rightsized or consolidated.",
+      "plain_english": "This production data engineering server has been running for 40 days with only 2.18% CPU usage. Even in production, servers should be right-sized or replaced with auto-scaling solutions.",
+      "business_impact": "Wasting $5,875 annually on oversized production capacity that could be downsized or moved to serverless.",
       "monthly_saving": 489.6,
-      "priority_action": "Investigate if this workload can be moved to a smaller instance or consolidated with other services.",
+      "priority_action": "Investigate if this workload can be moved to AWS Lambda, Glue, or a smaller instance type.",
       "cli_fix": "aws ec2 stop-instances --instance-ids i-04272602734 --region eu-west-1"
     },
     {
@@ -63,10 +63,10 @@
       "finding_id": "IDLE-EC2-899549",
       "resource_name": "frontend-staging-ec2-13",
       "team": "frontend",
-      "plain_english": "This staging server has been running for 22 days with extremely low CPU usage at 1.1%. Staging environments should only run during active testing or deployment activities.",
-      "business_impact": "Squandering $5,875 annually on idle staging infrastructure that provides no testing or deployment value when unused.",
+      "plain_english": "This frontend staging server has been running for 22 days with just 1.1% CPU usage. Staging environments for frontend apps can typically be replaced with serverless hosting or on-demand containers.",
+      "business_impact": "Spending $5,875 annually on staging infrastructure that could be replaced with much cheaper serverless alternatives.",
       "monthly_saving": 489.6,
-      "priority_action": "Stop the instance and implement CI/CD automation to start staging resources only during deployments.",
+      "priority_action": "Migrate this staging environment to AWS App Runner, Amplify, or implement start/stop automation.",
       "cli_fix": "aws ec2 stop-instances --instance-ids i-04944899549 --region eu-west-1"
     },
     {
@@ -74,10 +74,10 @@
       "finding_id": "IDLE-EC2-792787",
       "resource_name": "frontend-dev-ec2-04",
       "team": "frontend",
-      "plain_english": "This development server has been running for 106 days with only 2.2% CPU usage, indicating no active frontend development work. Long-running idle dev resources suggest poor resource hygiene practices.",
-      "business_impact": "Losing $4,356 annually on abandoned development infrastructure that could fund actual feature development.",
+      "plain_english": "This frontend development server has been running for 106 days with only 2.2% CPU usage. Development servers should be stopped when not actively being used for coding or testing.",
+      "business_impact": "Wasting $4,356 annually on development infrastructure that likely sits unused most of the time.",
       "monthly_saving": 363.0,
-      "priority_action": "Stop the instance immediately and establish team policies for managing development environment lifecycles.",
+      "priority_action": "Stop this instance and create a simple start/stop script for developers to use when needed.",
       "cli_fix": "aws ec2 stop-instances --instance-ids i-02625792787 --region eu-west-1"
     },
     {
@@ -85,10 +85,10 @@
       "finding_id": "IDLE-EC2-494220",
       "resource_name": "frontend-staging-ec2-05",
       "team": "frontend",
-      "plain_english": "This staging server has been idle for 93 days with 2.95% CPU usage, far longer than any reasonable testing cycle. Staging resources should have automatic cleanup after testing phases.",
-      "business_impact": "Hemorrhaging $4,356 annually on forgotten staging infrastructure that serves no current testing or validation purpose.",
+      "plain_english": "This frontend staging server has been idle for 93 days with 2.95% CPU usage. Staging environments should only run when testing is actively happening, not 24/7.",
+      "business_impact": "Burning $4,356 annually on staging capacity that could be provisioned on-demand for testing cycles.",
       "monthly_saving": 363.0,
-      "priority_action": "Stop the instance and implement automated staging environment cleanup after 7 days of inactivity.",
+      "priority_action": "Stop this instance and integrate start/stop automation with your CI/CD pipeline to provision staging on-demand.",
       "cli_fix": "aws ec2 stop-instances --instance-ids i-05231494220 --region ap-south-1"
     },
     {
@@ -96,10 +96,10 @@
       "finding_id": "IDLE-EC2-251661",
       "resource_name": "payments-sandbox-ec2-07",
       "team": "payments",
-      "plain_english": "This sandbox server has been running for 51 days with 3.92% CPU usage, indicating no active payment system experimentation. Sandbox resources should only run during active development or testing.",
-      "business_impact": "Wasting $3,319 annually on idle sandbox capacity that could support actual payments feature development.",
+      "plain_english": "This payments sandbox server has been running for 51 days with 3.92% CPU usage. Sandbox environments should be temporary and cleaned up regularly to prevent cost accumulation.",
+      "business_impact": "Costing $3,319 annually for experimental infrastructure that provides no ongoing business value.",
       "monthly_saving": 276.6,
-      "priority_action": "Stop the instance and create documentation for payments team on proper sandbox resource management.",
+      "priority_action": "Terminate this sandbox instance and implement automatic cleanup policies for all sandbox resources.",
       "cli_fix": "aws ec2 stop-instances --instance-ids i-01240251661 --region ap-south-1"
     },
     {
@@ -107,38 +107,38 @@
       "finding_id": "IDLE-EC2-598054",
       "resource_name": "platform-prod-ec2-19",
       "team": "platform",
-      "plain_english": "This production server has been running for 87 days with only 2.07% CPU usage, suggesting the workload has been moved elsewhere or dramatically reduced. Production resources this idle represent significant optimization opportunities.",
-      "business_impact": "Burning $3,319 annually on unused production capacity that could be eliminated or repurposed for actual platform needs.",
+      "plain_english": "This production platform server has been running for 87 days with only 2.07% CPU usage. Production resources should be right-sized and this appears significantly oversized for its actual workload.",
+      "business_impact": "Wasting $3,319 annually on production capacity that could be downsized or consolidated with other services.",
       "monthly_saving": 276.6,
-      "priority_action": "Verify if this server is still needed for production workloads and terminate or rightsize accordingly.",
+      "priority_action": "Analyze this server's actual workload and either downsize to a smaller instance type or consolidate with other services.",
       "cli_fix": "aws ec2 stop-instances --instance-ids i-09822598054 --region eu-west-1"
     }
   ],
   "quick_wins": [
-    "Stop all development and sandbox EC2 instances immediately - they can be restarted when needed with zero data loss",
-    "Create final snapshots of the idle RDS instance and delete it if no active development depends on it",
-    "Implement AWS Instance Scheduler to automatically stop non-production resources outside business hours"
+    "Stop all sandbox and development EC2 instances immediately - they can be restarted when needed with zero data loss",
+    "Create final snapshots and delete the idle RDS instance in sandbox that's been unused for 68 days",
+    "Implement AWS Instance Scheduler on all non-production environments to automatically stop instances outside business hours"
   ],
   "team_breakdown": {
     "payments": {
       "monthly_waste": 1382.4,
-      "top_issue": "Multiple idle staging and development instances running continuously when they should be stopped between active development cycles"
-    },
-    "data-eng": {
-      "monthly_waste": 1042.5,
-      "top_issue": "Idle production and sandbox instances indicating poor capacity planning and resource lifecycle management"
-    },
-    "frontend": {
-      "monthly_waste": 1215.6,
-      "top_issue": "Long-running idle development and staging environments suggesting lack of automated resource cleanup policies"
+      "top_issue": "Multiple idle staging and development instances that should be stopped when not in use"
     },
     "platform": {
       "monthly_waste": 967.8,
-      "top_issue": "Expensive idle RDS instance in sandbox environment that should be deleted or converted to serverless"
+      "top_issue": "Idle RDS database in sandbox burning $691 monthly for 68 days with minimal usage"
+    },
+    "data-eng": {
+      "monthly_waste": 1042.5,
+      "top_issue": "Idle servers in both production and sandbox that need right-sizing or termination"
+    },
+    "frontend": {
+      "monthly_waste": 852.6,
+      "top_issue": "Multiple staging and development environments running 24/7 instead of on-demand"
     }
   },
-  "closing_recommendation": "Focus immediately on stopping all non-production idle resources, which represents 85% of the waste and carries zero business risk. Implement automated scheduling and cleanup policies to prevent this waste from recurring, as the current burn rate of $67K annually could fund significant new infrastructure investments.",
-  "generated_at": "2026-05-25 18:17",
+  "closing_recommendation": "Implement a company-wide policy requiring all non-production resources to have auto-stop schedules and automatic cleanup dates. The top 10 findings alone represent $48,516 in annual waste that can be eliminated this week with zero impact on development velocity.",
+  "generated_at": "2026-05-26 16:56",
   "all_findings": [
     {
       "finding_id": "IDLE-EC2-334018",
@@ -155,7 +155,7 @@
       "recommendation": "Stop or terminate i-09963334018. If needed occasionally, convert to spot or use auto-start/stop scheduler.",
       "cli_fix": "aws ec2 stop-instances --instance-ids i-09963334018 --region us-east-1",
       "waste_score": 60.0,
-      "rank": 17
+      "rank": 18
     },
     {
       "finding_id": "IDLE-EC2-989805",
@@ -172,7 +172,7 @@
       "recommendation": "Stop or terminate i-01438989805. If needed occasionally, convert to spot or use auto-start/stop scheduler.",
       "cli_fix": "aws ec2 stop-instances --instance-ids i-01438989805 --region us-east-1",
       "waste_score": 30.0,
-      "rank": 21
+      "rank": 22
     },
     {
       "finding_id": "IDLE-EC2-792787",
@@ -308,7 +308,7 @@
       "recommendation": "Stop or terminate i-01822873088. If needed occasionally, convert to spot or use auto-start/stop scheduler.",
       "cli_fix": "aws ec2 stop-instances --instance-ids i-01822873088 --region eu-west-1",
       "waste_score": 60.0,
-      "rank": 18
+      "rank": 19
     },
     {
       "finding_id": "IDLE-EC2-514789",
@@ -342,7 +342,7 @@
       "recommendation": "Stop or terminate i-04875962612. If needed occasionally, convert to spot or use auto-start/stop scheduler.",
       "cli_fix": "aws ec2 stop-instances --instance-ids i-04875962612 --region ap-south-1",
       "waste_score": 30.0,
-      "rank": 22
+      "rank": 23
     },
     {
       "finding_id": "IDLE-EC2-237817",
@@ -376,7 +376,7 @@
       "recommendation": "Stop or terminate i-01676168421. If needed occasionally, convert to spot or use auto-start/stop scheduler.",
       "cli_fix": "aws ec2 stop-instances --instance-ids i-01676168421 --region eu-west-1",
       "waste_score": 30.0,
-      "rank": 23
+      "rank": 24
     },
     {
       "finding_id": "IDLE-RDS-LA8541",
@@ -461,7 +461,7 @@
       "recommendation": "Snapshot then delete if data not needed. If needed, attach to an instance.",
       "cli_fix": "aws ec2 create-snapshot --volume-id vol-08067372072 --description 'backup-before-delete' && aws ec2 delete-volume --volume-id vol-08067372072",
       "waste_score": 20.0,
-      "rank": 24
+      "rank": 25
     },
     {
       "finding_id": "EBS-UNATTACHED-416213",
@@ -478,7 +478,7 @@
       "recommendation": "Snapshot then delete if data not needed. If needed, attach to an instance.",
       "cli_fix": "aws ec2 create-snapshot --volume-id vol-01429416213 --description 'backup-before-delete' && aws ec2 delete-volume --volume-id vol-01429416213",
       "waste_score": 20.0,
-      "rank": 25
+      "rank": 26
     },
     {
       "finding_id": "EBS-UNATTACHED-285822",
@@ -495,7 +495,7 @@
       "recommendation": "Snapshot then delete if data not needed. If needed, attach to an instance.",
       "cli_fix": "aws ec2 create-snapshot --volume-id vol-09303285822 --description 'backup-before-delete' && aws ec2 delete-volume --volume-id vol-09303285822",
       "waste_score": 10.0,
-      "rank": 29
+      "rank": 31
     },
     {
       "finding_id": "EBS-UNATTACHED-782991",
@@ -512,7 +512,7 @@
       "recommendation": "Snapshot then delete if data not needed. If needed, attach to an instance.",
       "cli_fix": "aws ec2 create-snapshot --volume-id vol-03271782991 --description 'backup-before-delete' && aws ec2 delete-volume --volume-id vol-03271782991",
       "waste_score": 10.0,
-      "rank": 30
+      "rank": 32
     },
     {
       "finding_id": "EBS-UNATTACHED-872495",
@@ -563,7 +563,7 @@
       "recommendation": "Snapshot then delete if data not needed. If needed, attach to an instance.",
       "cli_fix": "aws ec2 create-snapshot --volume-id vol-07393195616 --description 'backup-before-delete' && aws ec2 delete-volume --volume-id vol-07393195616",
       "waste_score": 20.0,
-      "rank": 26
+      "rank": 27
     },
     {
       "finding_id": "EBS-UNATTACHED-195918",
@@ -580,7 +580,7 @@
       "recommendation": "Snapshot then delete if data not needed. If needed, attach to an instance.",
       "cli_fix": "aws ec2 create-snapshot --volume-id vol-05310195918 --description 'backup-before-delete' && aws ec2 delete-volume --volume-id vol-05310195918",
       "waste_score": 5.0,
-      "rank": 32
+      "rank": 34
     },
     {
       "finding_id": "EBS-UNATTACHED-785916",
@@ -597,7 +597,7 @@
       "recommendation": "Snapshot then delete if data not needed. If needed, attach to an instance.",
       "cli_fix": "aws ec2 create-snapshot --volume-id vol-08325785916 --description 'backup-before-delete' && aws ec2 delete-volume --volume-id vol-08325785916",
       "waste_score": 20.0,
-      "rank": 27
+      "rank": 28
     },
     {
       "finding_id": "EBS-UNATTACHED-292475",
@@ -614,7 +614,7 @@
       "recommendation": "Snapshot then delete if data not needed. If needed, attach to an instance.",
       "cli_fix": "aws ec2 create-snapshot --volume-id vol-03343292475 --description 'backup-before-delete' && aws ec2 delete-volume --volume-id vol-03343292475",
       "waste_score": 5.0,
-      "rank": 33
+      "rank": 35
     },
     {
       "finding_id": "EBS-UNATTACHED-374338",
@@ -648,7 +648,7 @@
       "recommendation": "Snapshot then delete if data not needed. If needed, attach to an instance.",
       "cli_fix": "aws ec2 create-snapshot --volume-id vol-03929454134 --description 'backup-before-delete' && aws ec2 delete-volume --volume-id vol-03929454134",
       "waste_score": 20.0,
-      "rank": 28
+      "rank": 29
     },
     {
       "finding_id": "EIP-UNUSED-640499",
@@ -665,7 +665,7 @@
       "recommendation": "Release EIP if no longer needed.",
       "cli_fix": "aws ec2 release-address --allocation-id eipalloc-063640499 --region ap-south-1",
       "waste_score": 2.16,
-      "rank": 34
+      "rank": 36
     },
     {
       "finding_id": "EIP-UNUSED-062156",
@@ -682,7 +682,7 @@
       "recommendation": "Release EIP if no longer needed.",
       "cli_fix": "aws ec2 release-address --allocation-id eipalloc-067062156 --region ap-south-1",
       "waste_score": 2.16,
-      "rank": 35
+      "rank": 37
     },
     {
       "finding_id": "EIP-UNUSED-813739",
@@ -699,7 +699,7 @@
       "recommendation": "Release EIP if no longer needed.",
       "cli_fix": "aws ec2 release-address --allocation-id eipalloc-084813739 --region ap-south-1",
       "waste_score": 2.16,
-      "rank": 36
+      "rank": 38
     },
     {
       "finding_id": "EIP-UNUSED-600766",
@@ -716,7 +716,7 @@
       "recommendation": "Release EIP if no longer needed.",
       "cli_fix": "aws ec2 release-address --allocation-id eipalloc-099600766 --region eu-west-1",
       "waste_score": 2.16,
-      "rank": 37
+      "rank": 39
     },
     {
       "finding_id": "EIP-UNUSED-276174",
@@ -733,7 +733,7 @@
       "recommendation": "Release EIP if no longer needed.",
       "cli_fix": "aws ec2 release-address --allocation-id eipalloc-067276174 --region eu-west-1",
       "waste_score": 2.16,
-      "rank": 38
+      "rank": 40
     },
     {
       "finding_id": "EIP-UNUSED-788100",
@@ -750,7 +750,28 @@
       "recommendation": "Release EIP if no longer needed.",
       "cli_fix": "aws ec2 release-address --allocation-id eipalloc-044788100 --region ap-south-1",
       "waste_score": 2.16,
-      "rank": 39
+      "rank": 41
+    },
+    {
+      "finding_id": "S3-COLD-ucket-03",
+      "category": "Storage Optimisation",
+      "severity": "MEDIUM",
+      "service": "S3",
+      "resource_id": "s3-frontend-dev-bucket-03",
+      "resource_name": "frontend-dev-s3-03",
+      "region": "us-east-1",
+      "team": "frontend",
+      "environment": "dev",
+      "size_gb": 4951.0,
+      "access_tier": "Cold",
+      "days_since_access": 60,
+      "last_accessed": "2026-03-27",
+      "detail": "4,951 GB bucket not accessed in 60 days but on S3 Standard pricing. Tier: Cold.",
+      "monthly_waste_usd": 62.63,
+      "recommendation": "Apply S3 Intelligent-Tiering or Lifecycle rule to move to Glacier after 30 days.",
+      "cli_fix": "aws s3api put-bucket-lifecycle-configuration --bucket s3-frontend-dev-bucket-03 --lifecycle-configuration file://glacier-lifecycle.json",
+      "waste_score": 62.63,
+      "rank": 17
     },
     {
       "finding_id": "S3-COLD-ucket-04",
@@ -762,12 +783,16 @@
       "region": "us-east-1",
       "team": "payments",
       "environment": "sandbox",
-      "detail": "Bucket not accessed in 101 days but on S3 Standard pricing. Move to Glacier.",
+      "size_gb": 3822.0,
+      "access_tier": "Frozen",
+      "days_since_access": 102,
+      "last_accessed": "2026-02-13",
+      "detail": "3,822 GB bucket not accessed in 102 days but on S3 Standard pricing. Tier: Frozen.",
       "monthly_waste_usd": 48.35,
       "recommendation": "Apply S3 Intelligent-Tiering or Lifecycle rule to move to Glacier after 30 days.",
       "cli_fix": "aws s3api put-bucket-lifecycle-configuration --bucket s3-payments-sandbox-bucket-04 --lifecycle-configuration file://glacier-lifecycle.json",
       "waste_score": 48.35,
-      "rank": 20
+      "rank": 21
     },
     {
       "finding_id": "S3-COLD-ucket-07",
@@ -779,12 +804,16 @@
       "region": "us-east-1",
       "team": "payments",
       "environment": "sandbox",
-      "detail": "Bucket not accessed in 78 days but on S3 Standard pricing. Move to Glacier.",
+      "size_gb": 578.0,
+      "access_tier": "Cold",
+      "days_since_access": 79,
+      "last_accessed": "2026-03-08",
+      "detail": "578 GB bucket not accessed in 79 days but on S3 Standard pricing. Tier: Cold.",
       "monthly_waste_usd": 7.31,
       "recommendation": "Apply S3 Intelligent-Tiering or Lifecycle rule to move to Glacier after 30 days.",
       "cli_fix": "aws s3api put-bucket-lifecycle-configuration --bucket s3-payments-sandbox-bucket-07 --lifecycle-configuration file://glacier-lifecycle.json",
       "waste_score": 7.31,
-      "rank": 31
+      "rank": 33
     },
     {
       "finding_id": "S3-COLD-ucket-08",
@@ -796,12 +825,37 @@
       "region": "us-east-1",
       "team": "ml-ops",
       "environment": "staging",
-      "detail": "Bucket not accessed in 91 days but on S3 Standard pricing. Move to Glacier.",
+      "size_gb": 3930.0,
+      "access_tier": "Frozen",
+      "days_since_access": 92,
+      "last_accessed": "2026-02-23",
+      "detail": "3,930 GB bucket not accessed in 92 days but on S3 Standard pricing. Tier: Frozen.",
       "monthly_waste_usd": 49.71,
       "recommendation": "Apply S3 Intelligent-Tiering or Lifecycle rule to move to Glacier after 30 days.",
       "cli_fix": "aws s3api put-bucket-lifecycle-configuration --bucket s3-ml-ops-staging-bucket-08 --lifecycle-configuration file://glacier-lifecycle.json",
       "waste_score": 49.71,
-      "rank": 19
+      "rank": 20
+    },
+    {
+      "finding_id": "S3-IA-ucket-01",
+      "category": "Storage Optimisation",
+      "severity": "LOW",
+      "service": "S3",
+      "resource_id": "s3-frontend-dev-bucket-01",
+      "resource_name": "frontend-dev-s3-01",
+      "region": "us-east-1",
+      "team": "frontend",
+      "environment": "dev",
+      "size_gb": 1625.0,
+      "access_tier": "Infrequent",
+      "days_since_access": 52,
+      "last_accessed": "2026-04-04",
+      "detail": "1,625 GB bucket last accessed 52 days ago. Move to S3-Infrequent Access tier.",
+      "monthly_waste_usd": 16.82,
+      "recommendation": "Switch to S3 Infrequent Access or enable Intelligent-Tiering.",
+      "cli_fix": "aws s3api put-bucket-intelligent-tiering-configuration --bucket s3-frontend-dev-bucket-01 --id tiering-config --intelligent-tiering-configuration Id=tiering-config,Status=Enabled",
+      "waste_score": 10.09,
+      "rank": 30
     }
   ],
   "raw_top10": [
