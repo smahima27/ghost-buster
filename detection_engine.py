@@ -26,6 +26,37 @@ RIGHTSIZE_MAP = {
     "db.r5.2xlarge":("db.r5.xlarge",0.48),
 }
 
+# Threshold for NAT Gateway idle detection
+NAT_IDLE_TRAFFIC_GB = 1.0   # GB/week — below this = idle NAT Gateway
+SNAPSHOT_AGE_THRESHOLD  = 90    # days — orphaned snapshots older than this = waste
+GP2_TO_GP3_SAVING_PCT   = 0.20  # gp3 is 20% cheaper than gp2 per GB
+RI_SP_DAYS_THRESHOLD    = 30    # days on-demand before flagging for RI/SP purchase
+RI_SP_SAVING_PCT        = 0.40  # estimated saving with Reserved Instance or Savings Plan
+CACHE_CPU_THRESHOLD     = 10.0  # % — ElastiCache/Redshift below this = underutilized
+LOG_RETENTION_SAVING_PCT = 0.70 # saving from applying 30-day retention to infinite log groups
+
+# Old-generation → new-generation map: "old_type": ("new_type", old_hourly_usd, new_hourly_usd)
+OLD_GEN_MAP = {
+    "t2.micro":    ("t3.micro",    0.0116, 0.0104),
+    "t2.small":    ("t3.small",    0.023,  0.0208),
+    "t2.medium":   ("t3.medium",   0.0464, 0.0416),
+    "t2.large":    ("t3.large",    0.0928, 0.0832),
+    "t2.xlarge":   ("t3.xlarge",   0.1856, 0.1664),
+    "t2.2xlarge":  ("t3.2xlarge",  0.3712, 0.3328),
+    "m4.large":    ("m5.large",    0.1,    0.096),
+    "m4.xlarge":   ("m5.xlarge",   0.2,    0.192),
+    "m4.2xlarge":  ("m5.2xlarge",  0.4,    0.384),
+    "m4.4xlarge":  ("m5.4xlarge",  0.8,    0.768),
+    "c4.large":    ("c5.large",    0.1,    0.085),
+    "c4.xlarge":   ("c5.xlarge",   0.199,  0.17),
+    "c4.2xlarge":  ("c5.2xlarge",  0.398,  0.34),
+    "c4.4xlarge":  ("c5.4xlarge",  0.796,  0.68),
+    "r4.large":    ("r5.large",    0.133,  0.126),
+    "r4.xlarge":   ("r5.xlarge",   0.266,  0.252),
+    "r4.2xlarge":  ("r5.2xlarge",  0.532,  0.504),
+    "r4.4xlarge":  ("r5.4xlarge",  1.064,  1.008),
+}
+
 # ─── Load data ────────────────────────────────────────────────────────────────
 def load_data(filepath="aws_cost_data.csv"):
     df = pd.read_csv(filepath, parse_dates=["last_accessed"])
@@ -39,7 +70,8 @@ def detect_idle_ec2(df):
     ec2 = df[df["service"] == "EC2"].copy()
     idle = ec2[
         (ec2["cpu_avg_7d"] < IDLE_CPU_THRESHOLD) &
-        (ec2["days_running"] >= IDLE_DAYS_THRESHOLD)
+        (ec2["days_running"] >= IDLE_DAYS_THRESHOLD) &
+        (~ec2["status"].str.contains("stopped", case=False, na=False))
     ]
     for _, r in idle.iterrows():
         findings.append({
@@ -192,6 +224,253 @@ def detect_idle_rds(df):
     return findings
 
 
+def detect_nat_idle(df):
+    # For NAT Gateway rows, cpu_avg_7d encodes network traffic in GB/week
+    findings = []
+    nats = df[
+        (df["service"] == "NAT Gateway") &
+        (df["cpu_avg_7d"] < NAT_IDLE_TRAFFIC_GB)
+    ]
+    for _, r in nats.iterrows():
+        traffic_gb = float(r["cpu_avg_7d"])
+        findings.append({
+            "finding_id":        f"NAT-IDLE-{r['resource_id'][-6:]}",
+            "category":          "Zombie Resource",
+            "severity":          "MEDIUM",
+            "service":           "NAT Gateway",
+            "resource_id":       r["resource_id"],
+            "resource_name":     r["resource_name"],
+            "region":            r["region"],
+            "team":              r["team"],
+            "environment":       r["environment"],
+            "detail":            f"NAT Gateway processed only {traffic_gb:.2f} GB in the past 7 days. AWS charges a $32/mo minimum regardless of traffic volume.",
+            "monthly_waste_usd": float(r["monthly_cost_usd"]),
+            "recommendation":    "Delete idle NAT Gateway. Verify no workloads depend on it for outbound internet access before removal.",
+            "cli_fix":           f"aws ec2 delete-nat-gateway --nat-gateway-id {r['resource_id']} --region {r['region']}"
+        })
+    return findings
+
+
+def detect_idle_load_balancers(df):
+    # For ALB/NLB rows: cpu_avg_7d = request_count_7d, memory_avg_7d = target_group_count
+    findings = []
+    lbs = df[
+        (df["service"].isin(["ALB", "NLB"])) &
+        ((df["memory_avg_7d"] == 0) | (df["cpu_avg_7d"] == 0))
+    ]
+    for _, r in lbs.iterrows():
+        tg_count  = int(r["memory_avg_7d"])
+        req_count = int(r["cpu_avg_7d"])
+        reason = "no registered target groups" if tg_count == 0 else "zero requests in the past 7 days"
+        findings.append({
+            "finding_id":        f"LB-IDLE-{r['resource_id'][-6:]}",
+            "category":          "Zombie Resource",
+            "severity":          "MEDIUM",
+            "service":           r["service"],
+            "resource_id":       r["resource_id"],
+            "resource_name":     r["resource_name"],
+            "region":            r["region"],
+            "team":              r["team"],
+            "environment":       r["environment"],
+            "detail":            f"{r['service']} has {reason}. Load balancers cost $16+/mo even with zero traffic.",
+            "monthly_waste_usd": float(r["monthly_cost_usd"]),
+            "recommendation":    "Delete the load balancer and clean up any associated DNS records or ACM certificates.",
+            "cli_fix":           f"aws elbv2 delete-load-balancer --load-balancer-arn {r['resource_id']} --region {r['region']}"
+        })
+    return findings
+
+
+def detect_old_gen_instances(df):
+    findings = []
+    ec2 = df[df["service"] == "EC2"]
+    for _, r in ec2.iterrows():
+        itype = r["resource_type"]
+        if itype not in OLD_GEN_MAP:
+            continue
+        new_type, old_hourly, new_hourly = OLD_GEN_MAP[itype]
+        saving = round((old_hourly - new_hourly) * 24 * 30, 2)
+        if saving <= 0:
+            continue
+        pct = round((old_hourly - new_hourly) / old_hourly * 100)
+        findings.append({
+            "finding_id":        f"OLDGEN-{r['resource_id'][-6:]}",
+            "category":          "Old Generation",
+            "severity":          "LOW",
+            "service":           "EC2",
+            "resource_id":       r["resource_id"],
+            "resource_name":     r["resource_name"],
+            "region":            r["region"],
+            "team":              r["team"],
+            "environment":       r["environment"],
+            "detail":            f"Running deprecated {itype}. Upgrading to {new_type} saves ${saving}/mo ({pct}% cheaper) with better CPU performance and no architectural changes.",
+            "monthly_waste_usd": saving,
+            "recommendation":    f"Stop instance, change type to {new_type}, restart. Schedule during next maintenance window.",
+            "cli_fix":           f"aws ec2 stop-instances --instance-ids {r['resource_id']} --region {r['region']} && aws ec2 modify-instance-attribute --instance-id {r['resource_id']} --instance-type {{Value={new_type}}} --region {r['region']}"
+        })
+    return findings
+
+
+def detect_orphan_snapshots(df):
+    findings = []
+    snaps = df[
+        (df["service"] == "EBS Snapshot") &
+        (df["status"].str.contains("orphaned", case=False, na=False)) &
+        (df["days_running"] >= SNAPSHOT_AGE_THRESHOLD)
+    ]
+    for _, r in snaps.iterrows():
+        findings.append({
+            "finding_id":        f"SNAP-ORPHAN-{r['resource_id'][-6:]}",
+            "category":          "Zombie Resource",
+            "severity":          "MEDIUM" if r["monthly_cost_usd"] > 30 else "LOW",
+            "service":           "EBS Snapshot",
+            "resource_id":       r["resource_id"],
+            "resource_name":     r["resource_name"],
+            "region":            r["region"],
+            "team":              r["team"],
+            "environment":       r["environment"],
+            "detail":            f"Orphaned snapshot {r['days_running']} days old — source volume no longer exists. Accruing ${r['monthly_cost_usd']}/mo in S3 snapshot storage.",
+            "monthly_waste_usd": float(r["monthly_cost_usd"]),
+            "recommendation":    "Delete orphaned snapshot after confirming the data is no longer needed for recovery.",
+            "cli_fix":           f"aws ec2 delete-snapshot --snapshot-id {r['resource_id']} --region {r['region']}"
+        })
+    return findings
+
+
+def detect_gp2_volumes(df):
+    findings = []
+    gp2 = df[
+        (df["service"] == "EBS") &
+        (df["resource_type"].str.startswith("gp2", na=False))
+    ]
+    for _, r in gp2.iterrows():
+        saving = round(float(r["monthly_cost_usd"]) * GP2_TO_GP3_SAVING_PCT, 2)
+        findings.append({
+            "finding_id":        f"GP2-VOLUME-{r['resource_id'][-6:]}",
+            "category":          "Storage Optimisation",
+            "severity":          "LOW",
+            "service":           "EBS",
+            "resource_id":       r["resource_id"],
+            "resource_name":     r["resource_name"],
+            "region":            r["region"],
+            "team":              r["team"],
+            "environment":       r["environment"],
+            "detail":            f"gp2 volume costs ${r['monthly_cost_usd']}/mo. Migrating to gp3 saves 20% (${saving}/mo) and delivers 3x baseline IOPS with 125 MB/s throughput at no extra cost.",
+            "monthly_waste_usd": saving,
+            "recommendation":    "Modify volume type from gp2 to gp3. Zero downtime — change takes effect within minutes.",
+            "cli_fix":           f"aws ec2 modify-volume --volume-id {r['resource_id']} --volume-type gp3 --region {r['region']}"
+        })
+    return findings
+
+
+def detect_ondemand_no_coverage(df):
+    # status "running-ondemand" flags EC2 instances confirmed without RI/SP coverage
+    findings = []
+    ondemand = df[
+        (df["service"] == "EC2") &
+        (df["status"].str.contains("ondemand", case=False, na=False)) &
+        (df["days_running"] >= RI_SP_DAYS_THRESHOLD)
+    ]
+    for _, r in ondemand.iterrows():
+        saving = round(float(r["monthly_cost_usd"]) * RI_SP_SAVING_PCT, 2)
+        findings.append({
+            "finding_id":        f"RI-MISSING-{r['resource_id'][-6:]}",
+            "category":          "RI/SP Optimisation",
+            "severity":          "MEDIUM" if r["monthly_cost_usd"] > 200 else "LOW",
+            "service":           "EC2",
+            "resource_id":       r["resource_id"],
+            "resource_name":     r["resource_name"],
+            "region":            r["region"],
+            "team":              r["team"],
+            "environment":       r["environment"],
+            "detail":            f"Instance has run on-demand for {r['days_running']} days with no Reserved Instance or Savings Plan. On-demand is 30-60% more expensive than committed pricing.",
+            "monthly_waste_usd": saving,
+            "recommendation":    "Purchase a 1-year Compute Savings Plan or Reserved Instance. Break-even in ~7 months vs on-demand pricing.",
+            "cli_fix":           f"aws ce get-reservation-purchase-recommendation --service 'Amazon EC2' --region {r['region']}"
+        })
+    return findings
+
+
+def detect_infinite_log_retention(df):
+    findings = []
+    logs = df[
+        (df["service"] == "CloudWatch Logs") &
+        (df["resource_type"].str.contains("infinite", case=False, na=False))
+    ]
+    for _, r in logs.iterrows():
+        saving = round(float(r["monthly_cost_usd"]) * LOG_RETENTION_SAVING_PCT, 2)
+        findings.append({
+            "finding_id":        f"LOG-INFINITE-{r['resource_id'][-7:]}",
+            "category":          "Log Retention",
+            "severity":          "LOW",
+            "service":           "CloudWatch Logs",
+            "resource_id":       r["resource_id"],
+            "resource_name":     r["resource_name"],
+            "region":            r["region"],
+            "team":              r["team"],
+            "environment":       r["environment"],
+            "detail":            f"Log group has infinite retention — logs never expire and accumulate at ${r['monthly_cost_usd']}/mo. Setting 30-day retention reduces storage cost by ~70%.",
+            "monthly_waste_usd": saving,
+            "recommendation":    "Set retention policy to 30, 60, or 90 days depending on compliance requirements. Zero downtime.",
+            "cli_fix":           f"aws logs put-retention-policy --log-group-name \"{r['resource_name']}\" --retention-in-days 30 --region {r['region']}"
+        })
+    return findings
+
+
+def detect_stopped_ec2_with_ebs(df):
+    findings = []
+    stopped = df[
+        (df["service"] == "EC2") &
+        (df["status"].str.contains("^stopped$", case=False, na=False, regex=True))
+    ]
+    for _, r in stopped.iterrows():
+        findings.append({
+            "finding_id":        f"STOPPED-EC2-{r['resource_id'][-6:]}",
+            "category":          "Zombie Resource",
+            "severity":          "MEDIUM" if r["monthly_cost_usd"] > 20 else "LOW",
+            "service":           "EC2",
+            "resource_id":       r["resource_id"],
+            "resource_name":     r["resource_name"],
+            "region":            r["region"],
+            "team":              r["team"],
+            "environment":       r["environment"],
+            "detail":            f"Instance stopped for {r['days_running']} days but attached EBS volumes still incur ${r['monthly_cost_usd']}/mo in storage charges with zero utilization.",
+            "monthly_waste_usd": float(r["monthly_cost_usd"]),
+            "recommendation":    "Snapshot and terminate the instance, or detach and delete unused EBS volumes to eliminate storage costs.",
+            "cli_fix":           f"aws ec2 create-image --instance-id {r['resource_id']} --name 'backup-before-terminate' --region {r['region']} && aws ec2 terminate-instances --instance-ids {r['resource_id']} --region {r['region']}"
+        })
+    return findings
+
+
+def detect_underutilized_cache_redshift(df):
+    findings = []
+    cache = df[
+        (df["service"].isin(["ElastiCache", "Redshift"])) &
+        (df["cpu_avg_7d"] < CACHE_CPU_THRESHOLD) &
+        (df["days_running"] >= IDLE_DAYS_THRESHOLD)
+    ]
+    for _, r in cache.iterrows():
+        if r["service"] == "ElastiCache":
+            cli = f"aws elasticache delete-cache-cluster --cache-cluster-id {r['resource_id']} --region {r['region']}"
+        else:
+            cli = f"aws redshift delete-cluster --cluster-identifier {r['resource_id']} --skip-final-cluster-snapshot --region {r['region']}"
+        findings.append({
+            "finding_id":        f"IDLE-{r['service'].upper()[:5]}-{r['resource_id'][-6:]}",
+            "category":          "Idle Resource",
+            "severity":          "HIGH" if r["monthly_cost_usd"] > 100 else "MEDIUM",
+            "service":           r["service"],
+            "resource_id":       r["resource_id"],
+            "resource_name":     r["resource_name"],
+            "region":            r["region"],
+            "team":              r["team"],
+            "environment":       r["environment"],
+            "detail":            f"{r['service']} running at only {r['cpu_avg_7d']}% CPU for {r['days_running']} days — well below {CACHE_CPU_THRESHOLD}% utilization threshold.",
+            "monthly_waste_usd": float(r["monthly_cost_usd"]),
+            "recommendation":    f"Delete or downsize. For ElastiCache consider Serverless (scales to zero). For Redshift use pause/resume scheduling.",
+            "cli_fix":           cli
+        })
+    return findings
+
+
 # ─── Scoring & ranking ────────────────────────────────────────────────────────
 
 SEVERITY_MULTIPLIER = {"HIGH": 1.5, "MEDIUM": 1.0, "LOW": 0.6}
@@ -239,7 +518,16 @@ def run_detection(filepath="aws_cost_data.csv"):
         detect_unattached_ebs(df) +
         detect_unassociated_eips(df) +
         detect_cold_s3(df) +
-        detect_rightsizing(df)
+        detect_rightsizing(df) +
+        detect_nat_idle(df) +
+        detect_idle_load_balancers(df) +
+        detect_old_gen_instances(df) +
+        detect_orphan_snapshots(df) +
+        detect_gp2_volumes(df) +
+        detect_ondemand_no_coverage(df) +
+        detect_infinite_log_retention(df) +
+        detect_stopped_ec2_with_ebs(df) +
+        detect_underutilized_cache_redshift(df)
     )
 
     print(f"Total findings: {len(all_findings)}")
@@ -273,4 +561,6 @@ def run_detection(filepath="aws_cost_data.csv"):
     return output
 
 if __name__ == "__main__":
-    run_detection("aws_cost_data.csv")
+    import os
+    csv_path = os.environ.get("GHOSTBUSTERS_CSV", "aws_cost_data.csv")
+    run_detection(csv_path)

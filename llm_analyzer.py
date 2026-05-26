@@ -143,4 +143,6 @@ def analyze(findings_path="findings.json"):
     return report
 
 if __name__ == "__main__":
-    analyze("findings.json")
+    import os
+    findings_path = os.environ.get("GHOSTBUSTERS_FINDINGS", "findings.json")
+    analyze(findings_path)
